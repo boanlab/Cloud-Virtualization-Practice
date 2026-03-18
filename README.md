@@ -52,7 +52,5 @@ cupark@dankook.ac.kr
 
 ---
 
-<div align="left">
-
 ## Networked Systems and Security Lab (BoanLab) @ DKU 
 <img src="./images/boanlab_logo.svg" width="25%"/>
