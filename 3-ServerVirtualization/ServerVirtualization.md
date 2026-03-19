@@ -5,7 +5,7 @@
 
 ## 1. KVM (Kernel-based Virtual Machine)
 
-리눅스 커널 모듈 기반의 가상화 기능으로 Intel VT-x 또는 AMD-V를 이용해 가상 머신(VM) 실행을 가속
+리눅스 `커널 모듈 기반의 가상화 기능`으로 Intel VT-x 또는 AMD-V를 이용해 가상 머신(VM) 실행을 가속
 
 - 리눅스를 호스트 OS로 이용하면서 하이퍼바이저 역할 수행
 - VM 실행 시 QEMU와 함께 사용됨
@@ -17,19 +17,19 @@
 
 ## 2. QEMU (Quick Emulator)
 
-PC 환경을 에뮬레이션하는 VM 실행기이자 프로세스 에뮬레이터로, KVM과 함께 사용하여 VM을 실행
+`PC 환경을 에뮬레이션`하는 VM 실행기이자 프로세스 에뮬레이터로, KVM과 함께 사용하여 VM을 실행
 
 - CPU와 주변 장치(Disk, NIC 등)를 에뮬레이션
 - CPU 명령을 변환하여 실행
 - CPU 가상화 지원이 없어도 동작 가능(단, 성능 저하 발생)
 
-![figure2](./images/figure2.png)
+<img src="./images/figure2.png" width="50%"/>
 
 ---
 
 ## 3. Libvirt
 
-가상화 환경을 관리하기 위한 관리 프레임워크
+`가상화 환경을 관리`하기 위한 관리 프레임워크
 
 QEMU-KVM, Xen, VMware 등 다양한 하이퍼바이저를 관리하고 제어하기 위한 **통합 API** 제공
 
