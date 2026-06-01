@@ -1501,39 +1501,6 @@ kubectl exec -it falco-test -- cat /etc/shadow
 
 ---
 
-## 27. 실습 정리
-
-### Kubernetes 리소스 및 도구 제거
-
-```bash
-# 생성한 실습 Pod 및 정책 정리
-kubectl delete pod --all
-kubectl delete clusterpolicy --all 2>/dev/null
-
-# 정책 엔진 / 런타임 도구 제거
-helm uninstall kyverno -n kyverno
-helm uninstall falco -n falco
-kubectl delete -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/v3.16.3/deploy/gatekeeper.yaml
-```
-
-### 클라우드 실습 환경 제거
-
-```bash
-# LocalStack 중지 (생성한 가짜 AWS 리소스도 함께 제거됨)
-source ~/cnapp-venv/bin/activate
-localstack stop
-
-# 가상환경 비활성화
-deactivate
-```
-
-### 참고
-
-- 클러스터 자체를 초기화하려면 `sudo kubeadm reset -f` 실행
-- LocalStack은 메모리 기반이므로 중지 시 생성한 S3 버킷·IAM 리소스가 모두 사라짐
-
----
-
 ## Q & A
 
 박찬욱  
