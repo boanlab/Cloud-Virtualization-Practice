@@ -70,5 +70,9 @@ cupark@dankook.ac.kr
 
 ---
 
+### 클라우드 보안 기술 실습 - [바로가기](CloudSecurity/CloudSecurity.md)
+
+- Trivy 기반 이미지/IaC 취약점 스캔, Kubescape 기반 쿠버네티스 보안 점검, Kyverno/OPA 기반 정책 강제, Seccomp/AppArmor/Falco 기반 컨테이너 런타임 보안 실습
+
 ## Networked Systems and Security Lab (BoanLab) @ DKU 
 <img src="./images/boanlab_logo.svg" width="25%"/>
