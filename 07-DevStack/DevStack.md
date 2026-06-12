@@ -1,6 +1,6 @@
 # 클라우드 가상화 기술
 
-## 09. 오픈스택 활용 (DevStack) 실습
+## 07. 오픈스택 활용 (DevStack) 실습
 
 > 본 실습은 단일 노드(All-in-One) 환경에 DevStack으로 OpenStack `2026.1 Gazpacho`(최신 안정 버전)를 설치하는 환경을 기준으로 합니다.
 
