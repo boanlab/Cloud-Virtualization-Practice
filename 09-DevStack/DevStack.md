@@ -1,6 +1,10 @@
 # 클라우드 가상화 기술
 
-## 오픈스택 실습
+## 09. 오픈스택 활용 (DevStack) 실습
+
+> 본 실습은 단일 노드(All-in-One) 환경에 DevStack으로 OpenStack `2026.1 Gazpacho`(최신 안정 버전)를 설치하는 환경을 기준으로 합니다.
+
+DevStack은 OpenStack 공식 개발/평가용 자동 설치 도구로, 가상 머신 1대만으로 핵심 서비스 전체를 빠르게 구축해 OpenStack의 동작을 직접 확인할 수 있게 해 줍니다. 본 실습에서는 가상 머신 1대를 준비해 단일 노드 환경에 OpenStack을 설치하고, 인증부터 컴퓨트·네트워크·스토리지·오케스트레이션까지 주요 서비스를 차례로 다룹니다.
 
 - 가상 머신 1대를 준비하여 단일 노드(All-in-One) 환경으로 OpenStack 설치
 - 설치 도구는 OpenStack 공식 개발/평가용 도구인 `DevStack` 사용
@@ -31,6 +35,8 @@
 
 ## 2. CPU 가상화 지원 확인
 
+OpenStack은 내부적으로 VM을 띄우므로, 가상 머신 위에서 다시 가상화를 수행하는 중첩(Nested) 가상화나 KVM 가속이 가능한지 먼저 확인합니다. 가속이 불가능하면 설치는 되지만 VM 성능이 크게 떨어집니다.
+
 ```bash
 # 호스트 KVM 모듈의 nested 가상화 허용 여부 확인
 cat /sys/module/kvm_intel/parameters/nested
@@ -51,6 +57,8 @@ ls /dev/kvm
 ---
 
 ## 3. 사전 패키지 설치
+
+DevStack 설치와 이후 실습에 필요한 기본 도구를 미리 준비하고, 패키지 인덱스를 최신 상태로 갱신합니다.
 
 ```bash
 # 패키지 인덱스 업데이트
@@ -113,6 +121,8 @@ git checkout stable/2026.1
 
 ## 6. local.conf 작성
 
+`local.conf`는 DevStack의 핵심 설정 파일로, 설치할 서비스 목록·네트워크 대역·비밀번호 등 설치 동작 전반을 이 한 파일로 제어합니다. 설치 스크립트는 실행 시 이 파일을 읽어 환경을 구성하므로, 설치 전에 미리 작성해 두어야 합니다.
+
 - DevStack은 `local.conf` 파일을 통해 설치 동작을 제어
 - 비밀번호 4종(`ADMIN/DATABASE/RABBIT/SERVICE`)이 최소 필수 항목
 
@@ -163,6 +173,8 @@ EOF
 ---
 
 ## 7. DevStack 설치
+
+`stack.sh`는 DevStack의 메인 설치 스크립트로, 앞서 작성한 `local.conf`를 읽어 Keystone·Nova·Neutron 등 OpenStack 서비스를 자동으로 내려받아 설정·기동합니다. 한 번 실행하면 단일 노드 OpenStack이 완성됩니다.
 
 ```bash
 # devstack 디렉토리에서 수행
@@ -553,6 +565,8 @@ openstack router show lab-router
 
 ## 15. Nova - VM 인스턴스 생성
 
+앞서 준비한 이미지·Flavor·키페어·네트워크를 조합해 실제 가상 머신을 생성합니다. 먼저 접속을 허용할 보안 그룹(가상 방화벽)을 만든 뒤, 이를 적용한 인스턴스를 띄웁니다.
+
 ```bash
 source openrc demo demo
 
@@ -599,6 +613,8 @@ watch -n 1 'openstack server show lab-vm-01 -f value -c status -c OS-EXT-STS:vm_
 ---
 
 ## 16. VM 라이프사이클 관리
+
+생성한 인스턴스를 일시 정지·재개·종료·재시작하고 현재 상태를 스냅샷으로 저장하는 등, VM의 전체 수명 주기를 관리하는 명령을 차례로 실습합니다.
 
 ```bash
 # 일시 정지 (메모리 유지)
@@ -1149,6 +1165,8 @@ curl -s -o /dev/null -w "HTTP %{http_code}\n" \
 ---
 
 ## 23. 운영 점검 및 로그 분석
+
+OpenStack 클러스터가 정상 동작하는지 점검하는 방법을 살펴봅니다. 각 서비스의 상태를 종합 확인하고, 문제가 의심될 때 systemd 기반 로그를 추적해 원인을 파악합니다.
 
 ```bash
 # 시스템 상태 종합 확인

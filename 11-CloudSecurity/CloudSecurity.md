@@ -1,12 +1,16 @@
 # 클라우드 가상화 기술
 
-## 클라우드 보안 기술 실습
+## 11. 클라우드 보안 기술 실습
 
-본 실습에서는 클라우드 네이티브 환경의 **CNAPP(Cloud-Native Application Protection Platform)** 5대 영역을 오픈소스 도구로 직접 구축하는 과정을 다룸
+---
 
-이론에서 학습한 **CSPM, CWPP, CIEM, KSPM, DSPM**의 5대 영역을 실제 도구로 구현함
+> 본 실습은 LocalStack으로 구성한 로컬 AWS 환경과 kubeadm 기반 Kubernetes 클러스터(v1.29) 환경을 기준으로 합니다.
 
-클라우드 인프라 보안(CSPM/CIEM/DSPM)은 `LocalStack`으로 구성한 로컬 AWS 환경에서, 워크로드·클러스터 보안(CWPP/KSPM)은 `kubeadm` 기반의 실제 Kubernetes 클러스터(v1.29) 위에서 실습함
+본 실습에서는 클라우드 네이티브 환경의 **CNAPP(Cloud-Native Application Protection Platform)** 5대 영역을 오픈소스 도구로 직접 구축하는 과정을 다룬다. CNAPP는 빌드부터 런타임까지 클라우드 네이티브 애플리케이션의 보안을 하나의 플랫폼으로 통합하는 접근 방식을 가리킨다.
+
+앞 모듈에서 학습한 **CSPM, CWPP, CIEM, KSPM, DSPM**의 5대 영역을 실제 도구로 구현하며, 각 영역이 어떤 위험을 어떻게 점검하는지 직접 확인한다.
+
+클라우드 인프라 보안(CSPM/CIEM/DSPM)은 `LocalStack`으로 구성한 로컬 AWS 환경에서, 워크로드·클러스터 보안(CWPP/KSPM)은 `kubeadm` 기반의 실제 Kubernetes 클러스터(v1.29) 위에서 실습한다.
 
 | 구분 | 사용 도구 | CNAPP 영역 |
 | --- | --- | --- |
@@ -203,9 +207,9 @@ helm version
 
 ## 5. LocalStack 클라우드 환경 구축
 
-CSPM, CIEM, DSPM 실습은 클라우드 인프라(AWS)를 점검 대상으로 함
+CSPM, CIEM, DSPM 실습은 클라우드 인프라(AWS)를 점검 대상으로 한다.
 
-실제 AWS 계정 대신 `LocalStack`으로 로컬에 가짜 AWS 환경을 구성하여 비용 없이 클라우드 보안을 실습함
+실제 AWS 계정을 사용하면 비용과 보안 위험이 따르므로, 여기서는 실제 AWS 계정 대신 `LocalStack`으로 로컬에 가짜 AWS 환경을 구성하여 비용 없이 클라우드 보안을 실습한다.
 
 ### AWS CLI 도구 설치
 
@@ -284,9 +288,9 @@ awslocal iam attach-user-policy --user-name test-readonly \
 
 ## 6. CSPM - 클라우드 설정 오류 점검 (Prowler)
 
-`CSPM(Cloud Security Posture Management)`은 클라우드 인프라의 설정 오류와 컴플라이언스 위반을 점검하는 영역
+`CSPM(Cloud Security Posture Management)`은 클라우드 인프라의 설정 오류와 컴플라이언스 위반을 점검하는 영역이다. 잘못된 권한, 미암호화, 퍼블릭 노출 등 운영자가 놓치기 쉬운 설정을 지속적으로 점검하는 데 목적이 있다.
 
-`Prowler`는 CIS 벤치마크 기반으로 클라우드 설정을 점검하는 오픈소스 CSPM 도구로, PDF에서 소개한 CloudSploit과 동일한 CSPM 영역을 담당함
+`Prowler`는 CIS 벤치마크 등 보안 기준을 바탕으로 클라우드 설정을 점검하는 대표적인 오픈소스 CSPM 도구로, CloudSploit과 동일한 CSPM 영역을 담당한다.
 
 ### Prowler 설치 (별도 가상환경)
 
@@ -371,9 +375,9 @@ prowler aws --service s3 --ignore-exit-code-3
 
 ## 7. CIEM - 클라우드 권한 분석 (Steampipe)
 
-`CIEM(Cloud Infrastructure Entitlement Management)`은 클라우드 자원에 대한 접근 권한(IAM)을 분석하여 과도하거나 미사용 중인 권한을 식별하는 영역
+`CIEM(Cloud Infrastructure Entitlement Management)`은 클라우드 자원에 대한 접근 권한(IAM)을 분석하여 과도하거나 미사용 중인 권한을 식별하는 영역이다. 최소 권한 원칙을 위반한 권한을 찾아 공격 표면을 줄이는 것이 핵심이다.
 
-`Steampipe`는 클라우드 인프라를 SQL 테이블로 매핑하여 표준 SQL로 권한 및 설정을 분석하는 오픈소스 도구
+`Steampipe`는 클라우드 인프라를 SQL 테이블로 매핑하여 표준 SQL로 권한 및 설정을 분석하는 오픈소스 도구로, 익숙한 SQL 질의만으로 권한 현황을 점검할 수 있다.
 
 ### Steampipe 설치 및 AWS 플러그인 추가
 
@@ -438,9 +442,9 @@ where
 
 ## 8. DSPM - 클라우드 데이터 보안 점검
 
-`DSPM(Data Security Posture Management)`은 클라우드에 흩어진 민감 데이터를 발견 및 분류하고 노출 위험을 평가하는 영역
+`DSPM(Data Security Posture Management)`은 클라우드에 흩어진 민감 데이터를 발견 및 분류하고 노출 위험을 평가하는 영역이다. 어디에 어떤 민감 데이터가 있고 그것이 외부에 노출되어 있는지를 함께 따지는 것이 핵심이다.
 
-완성형 DSPM은 대부분 상용 솔루션(AWS Macie, Cyera 등)이므로, 본 실습에서는 DSPM의 핵심 단계인 **데이터 분류**(Presidio)와 **노출 평가**(S3 ACL 점검)를 오픈소스로 조합하여 그 동작 원리를 실습함
+완성형 DSPM은 대부분 상용 솔루션(AWS Macie, Cyera 등)이므로, 본 실습에서는 DSPM의 핵심 단계인 **데이터 분류**(Presidio)와 **노출 평가**(S3 ACL 점검)를 오픈소스로 조합하여 그 동작 원리를 실습한다.
 
 ### 민감 데이터 업로드
 
@@ -506,7 +510,7 @@ awslocal s3api get-bucket-acl --bucket public-data
 ---
 ## 9. Trivy 설치 (CWPP)
 
-`Trivy`는 컨테이너 이미지, 파일시스템, IaC 설정 파일의 취약점과 설정 오류를 통합 스캔하는 오픈소스 도구
+CWPP(Cloud Workload Protection Platform)는 컨테이너·VM 등 워크로드 자체의 취약점과 위협을 보호하는 영역이다. `Trivy`는 컨테이너 이미지, 파일시스템, IaC 설정 파일의 취약점과 설정 오류를 통합 스캔하는 대표적인 오픈소스 도구로, 빌드 단계에서 위험을 미리 걸러내는 데 활용한다.
 
 ### apt 저장소 등록 및 설치
 
@@ -625,9 +629,9 @@ trivy config ~/trivy-test
 
 ### 테스트용 파일 구성
 
-GitHub Repository를 생성하여 직접 테스트해보는 것을 추천함
+Trivy는 CI/CD 파이프라인에 통합하여 코드가 병합되기 전 단계에서 자동으로 취약점을 검사할 수 있다. 직접 확인하려면 GitHub Repository를 생성하여 테스트해 보는 것을 권장한다.
 
-Repository 루트에 아래 두 파일을 추가하고 push하면 GitHub Actions가 자동 실행됨
+Repository 루트에 아래 두 파일을 추가하고 push하면 GitHub Actions가 자동 실행된다.
 
 ```dockerfile
 # Dockerfile - 취약점이 다수 포함된 구버전 베이스 이미지
@@ -663,9 +667,9 @@ jobs:
 EOF
 ```
 
-push 후 Repository의 **Actions 탭**에서 워크플로우 실행 결과를 확인함
+push 후 Repository의 **Actions 탭**에서 워크플로우 실행 결과를 확인한다.
 
-`python:3.4-alpine`은 CRITICAL/HIGH 취약점이 많아 빌드가 실패(빨간 X) 처리됨
+`python:3.4-alpine`은 CRITICAL/HIGH 취약점이 많아 빌드가 실패(빨간 X) 처리된다.
 
 ![figure12](./images/figure12.png)
 
@@ -682,7 +686,7 @@ push 후 Repository의 **Actions 탭**에서 워크플로우 실행 결과를 �
 
 ## 13. Kubescape 설치 (KSPM)
 
-`Kubescape`는 NSA-CISA, MITRE ATT&CK 등 산업 표준 프레임워크 기반으로 쿠버네티스 클러스터의 설정 오류와 컴플라이언스 준수 여부를 점검하는 KSPM 도구
+KSPM(Kubernetes Security Posture Management)은 CSPM의 개념을 쿠버네티스 클러스터에 적용한 영역으로, 클러스터·워크로드 설정의 보안 상태를 점검한다. `Kubescape`는 NSA-CISA, MITRE ATT&CK 등 산업 표준 프레임워크를 기반으로 쿠버네티스 클러스터의 설정 오류와 컴플라이언스 준수 여부를 점검하는 대표적인 오픈소스 KSPM 도구다.
 
 ### 설치 스크립트 실행
 
@@ -794,9 +798,9 @@ kubescape scan ~/secure-pod.yaml
 
 ## 16. Kyverno 설치 (정책 관리)
 
-`Kyverno`는 별도 언어 없이 익숙한 YAML 문법으로 정책을 정의하는 Kubernetes 네이티브 정책 엔진
+정책 엔진은 클러스터에 들어오는 리소스가 보안 기준을 따르는지 자동으로 강제하여 거버넌스를 구현한다. `Kyverno`는 별도 언어 없이 익숙한 YAML 문법으로 정책을 정의하는 Kubernetes 네이티브 정책 엔진이다.
 
-배포 요청을 가로채어 정책에 따라 허용/거부를 결정함 (Admission Control)
+배포 요청을 가로채어 정책에 따라 허용/거부를 결정한다(Admission Control).
 
 ### Helm으로 설치
 
@@ -982,9 +986,9 @@ kubectl delete namespace kyverno
 
 ## 19. OPA Gatekeeper 설치 (정책 관리)
 
-`OPA Gatekeeper`는 Rego 언어로 정책을 작성하는 범용 정책 엔진
+`OPA Gatekeeper`는 OPA(Open Policy Agent)를 쿠버네티스에 통합한 정책 엔진으로, Rego라는 전용 정책 언어로 규칙을 작성한다.
 
-Kyverno와 동일한 Admission Control 기능을 수행하지만, Kubernetes 외 환경에도 적용 가능한 범용성이 특징
+Kyverno와 동일한 Admission Control 기능을 수행하지만, Kubernetes 외 환경에도 적용 가능한 OPA의 범용성이 특징이다.
 
 ### 매니페스트로 설치
 
@@ -1296,9 +1300,9 @@ sudo rm /etc/apparmor.d/k8s-deny-write
 
 ## 23. Falco 설치 (런타임 탐지)
 
-`Falco`는 eBPF로 시스템 콜을 실시간 분석하여 비정상적인 컨테이너 행위를 탐지하는 런타임 보안 도구
+`Falco`는 eBPF로 시스템 콜을 실시간 분석하여 비정상적인 컨테이너 행위를 탐지하는 대표적인 오픈소스 런타임 보안 도구다. 앞의 Seccomp/AppArmor가 행위를 사전에 차단(예방)하는 도구라면, Falco는 발생한 행위를 탐지·알림하는 데 초점이 있다.
 
-시그니처 기반이 아닌 행위 기반(Behavioral) 탐지로 제로 데이 위협까지 대응함
+시그니처 기반이 아닌 행위 기반(Behavioral) 탐지를 사용하므로, 알려지지 않은 제로 데이 위협까지 대응할 수 있다.
 
 ### Helm으로 설치
 

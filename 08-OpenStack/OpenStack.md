@@ -1,8 +1,10 @@
 # 클라우드 가상화 기술
 
-## 오픈스택 설치 및 구성 실습
+## 08. 오픈스택 설치 실습
 
-`Ubuntu 24.04` 환경에서 OpenStack을 패키지 기반으로 직접 설치하여 단일 노드 클라우드 환경을 구축
+> 본 실습은 `Ubuntu 24.04` 환경을 기준으로 합니다.
+
+OpenStack을 패키지 기반으로 직접 설치하여 단일 노드 클라우드 환경을 구축합니다. 가상 머신 1대를 준비해 단일 노드 환경에 OpenStack 패키지를 차례대로 설치하며, 각 핵심 컴포넌트가 어떻게 연동되는지 직접 확인합니다.
 
 - 가상 머신 1대를 준비하여 단일 노드 환경에 OpenStack 패키지 설치
 - OpenStack 릴리스 : `2024.1 Caracal` (Ubuntu 24.04 기본 제공)
@@ -12,7 +14,7 @@
 
 ## 1. VM 사양 및 사전 준비
 
-`SOLID CLOUD` 환경에서 가상 머신 1대를 준비하고, **격리 네트워크 설정** 및 **포트 포워딩 규칙**을 구성
+OpenStack을 올릴 토대가 될 가상 머신을 마련하는 단계입니다. `SOLID CLOUD` 환경에서 가상 머신 1대를 준비하고, 외부와 격리된 전용 네트워크를 만든 뒤 **포트 포워딩 규칙**까지 구성하여 외부에서 접속 가능한 단일 노드 환경을 갖춥니다.
 
 ### 1-1. VM 사양
 
@@ -39,7 +41,7 @@ SOLID CLOUD의 `Network → Guest Networks` 메뉴에서 `Add Network` 클릭
 
 ![figure2](./images/figure2.png)
 
-네트워크 이름(예: `isolated-[학번]`) 입력, `Network Offering`에 `Source Nat service enabled` 확인 후 생성
+네트워크 이름(예: `isolated-[식별자]`) 입력, `Network Offering`에 `Source Nat service enabled` 확인 후 생성
 
 ![figure3](./images/figure3.png)
 
@@ -146,6 +148,8 @@ ping -c 2 controller
 ---
 
 ## 3. 방화벽 해제 및 패키지 업데이트
+
+OpenStack 서비스들이 사용하는 다수의 포트가 로컬 방화벽에 막히지 않도록 `ufw`를 비활성화하고, 설치할 패키지의 최신 정보를 받아오기 위해 패키지 인덱스를 갱신합니다.
 
 ```bash
 # 방화벽 비활성화
@@ -332,6 +336,8 @@ sudo keystone-manage credential_setup --keystone-user keystone --keystone-group 
 ![figure26](./images/figure26.png)
 
 ### 8-5. Keystone Bootstrap
+
+Bootstrap은 관리자(admin) 계정과 기본 리전, Identity 엔드포인트를 한 번에 등록해 Keystone을 사용 가능한 초기 상태로 만드는 명령입니다.
 
 ```bash
 # 관리자 계정 및 엔드포인트 자동 생성
@@ -1451,7 +1457,7 @@ openstack image list
 
 ### 참고
 - 각 명령어가 모두 정상 응답하면 **OpenStack 핵심 서비스 설치 완료**
-- 이후 학생은 Horizon 또는 Skyline 대시보드를 통해 VM 생성 / 네트워크 구성 / 이미지 관리 등 실습 진행 가능
+- 이후 Horizon 또는 Skyline 대시보드를 통해 VM 생성 / 네트워크 구성 / 이미지 관리 등 실습 진행 가능
 - 트러블슈팅 시 각 서비스 로그 위치
   - Keystone : `/var/log/keystone/`
   - Glance : `/var/log/glance/`

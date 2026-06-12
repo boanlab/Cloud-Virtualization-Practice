@@ -1,10 +1,16 @@
 # 클라우드 가상화 기술
 
-## 컨테이너 기술 실습
+## 04. 컨테이너 기술 실습
+
+---
 
 ## 1. CPU Stress 테스트
 
+컨테이너 기술의 핵심인 리소스 제한을 실습하기에 앞서, 시스템에 의도적으로 부하를 주어 자원 사용량 변화를 관찰합니다. 이를 위해 CPU 부하 생성 도구인 `stress`를 사용합니다.
+
 ### CPU Stress 테스트 도구 설치
+
+`stress`는 CPU, 메모리, 디스크 등에 인위적인 부하를 발생시켜 시스템 동작을 시험할 수 있는 도구입니다.
 
 ```bash
 sudo apt update
@@ -15,6 +21,8 @@ sudo apt install stress
 
 ### Stress 테스트 실행
 
+스레드를 하나 띄워 CPU를 최대로 점유하도록 부하를 생성합니다. 이후 자원 제한을 적용했을 때와 사용량을 비교하기 위한 기준 상태가 됩니다.
+
 ```bash
 # CPU를 1개 스레드로 100% 사용하도록 부하 생성
 stress -c 1
@@ -23,6 +31,8 @@ stress -c 1
 ![figure1](./images/figure1.png)
 
 ### 리소스 사용량 확인
+
+`top` 명령으로 실시간 자원 사용량을 확인합니다. 부하를 준 `stress` 프로세스가 CPU를 거의 100% 사용하는 모습을 볼 수 있습니다.
 
 ```bash
 # 현재 시스템의 CPU / 메모리 / 프로세스 사용량 확인
@@ -35,7 +45,11 @@ top
 
 ## 2. Cgroups를 이용한 CPU 제한
 
+cgroup(control group)은 프로세스 그룹에 할당되는 CPU, 메모리 등 자원의 양을 제한하고 관리하는 리눅스 커널 기능으로, 컨테이너 자원 격리의 토대가 됩니다. 여기서는 cgroup을 생성하고 CPU 사용량을 제한해 봅니다.
+
 ### 테스트를 위한 Cgroup 생성
+
+자원 제한을 적용할 대상이 될 cgroup을 새로 만듭니다. cgroup v2에서는 `/sys/fs/cgroup` 아래에 디렉터리를 만드는 것만으로 새 그룹이 생성됩니다.
 
 ```bash
 # 새로운 cgroup 디렉터리 생성
@@ -53,6 +67,8 @@ cat /proc/$$/cgroup
 
 ### CPU 제한 설정 (예: 10ms / 100ms = 10%)
 
+이제 등록된 cgroup에 CPU 사용량 상한을 설정합니다. 주기(period) 대비 사용 가능한 시간(quota) 비율로 제한이 적용됩니다.
+
 ```bash
 # CPU 사용 제한 설정
 # cpu.max 파일은 "<quota> <period>" 형식을 사용
@@ -67,6 +83,8 @@ echo 10000 100000 | sudo tee /sys/fs/cgroup/mytest/cpu.max
 ---
 
 ## 3. Cgroups를 이용한 CPU 제한 테스트
+
+앞서 설정한 CPU 제한이 실제로 적용되는지 확인합니다. 동일한 부하를 다시 주었을 때, 제한이 없던 1번 실습과 달리 CPU 사용량이 설정한 상한 부근에서 머무는지 비교해 봅니다.
 
 ```bash
 # 다시 CPU 부하 생성
@@ -86,7 +104,11 @@ top
 
 ## 4. Cgroups를 이용한 생성 가능한 프로세스 수 제한
 
+cgroup은 CPU뿐 아니라 그룹 내에서 생성할 수 있는 프로세스(PID)의 개수도 제한할 수 있습니다. 이는 뒤에서 다룰 Fork Bomb과 같이 무한히 프로세스를 만들어 시스템을 마비시키는 상황을 막는 데 유용합니다.
+
 ### 테스트를 위한 Cgroup 생성
+
+프로세스 수 제한을 적용할 별도의 cgroup을 생성하고 현재 쉘을 등록합니다.
 
 ```bash
 # 프로세스 수 제한 테스트를 위한 cgroup 생성
@@ -103,6 +125,8 @@ cat /proc/$$/cgroup
 
 ### 프로세스 수 제한 설정
 
+`pids.max` 값을 설정해 해당 cgroup에서 생성 가능한 프로세스 수의 상한을 지정합니다.
+
 ```bash
 # 생성 가능한 최대 프로세스 수를 10개로 제한
 echo 10 | sudo tee /sys/fs/cgroup/myprocs/pids.max
@@ -113,6 +137,8 @@ echo 10 | sudo tee /sys/fs/cgroup/myprocs/pids.max
 ---
 
 ## 5. Fork Bomb 테스트
+
+Fork Bomb은 자기 자신을 무한히 복제하며 프로세스를 폭발적으로 늘려 시스템 자원을 고갈시키는 코드입니다. 앞서 설정한 프로세스 수 제한이 이러한 공격을 효과적으로 막아내는지 확인합니다.
 
 ```bash
 # Fork Bomb 실행
@@ -146,6 +172,8 @@ ls /sys/fs/cgroup/
 
 ## 6. 새 Mount Namespace 생성
 
+Namespace는 프로세스가 보는 시스템 자원을 격리하는 리눅스 커널 기능으로, cgroup과 함께 컨테이너 격리의 양대 축을 이룹니다. 그중 Mount Namespace는 파일시스템의 마운트 정보를 독립적으로 가지게 하여, 한 Namespace의 마운트가 다른 곳에 영향을 주지 않도록 합니다. 여기서는 새 Mount Namespace를 만들어 격리를 확인합니다.
+
 ```bash
 # 현재 쉘의 PID 확인
 echo $$
@@ -174,6 +202,8 @@ sudo lsns
 
 ### tmpfs 마운트
 
+새로 만든 Mount Namespace 안에서 메모리 기반 임시 파일시스템인 tmpfs를 `/mnt`에 마운트합니다. 이 마운트가 해당 Namespace에만 보이는지 다음 단계에서 확인합니다.
+
 ```bash
 # tmpfs 파일 시스템을 /mnt에 마운트
 sudo mount -t tmpfs tmpfs /mnt
@@ -189,6 +219,8 @@ mount | grep /mnt
 ---
 
 ## 7. Mount Namespace 격리 확인
+
+Namespace 내부에서 마운트한 tmpfs에 파일을 만든 뒤, 다른 터미널(호스트 Namespace)에서는 그 파일이 보이지 않음을 확인하여 마운트 격리가 실제로 동작하는지 검증합니다.
 
 ```bash
 # Mount Namespace 내부에서 파일 생성
@@ -225,6 +257,8 @@ ls -l /proc/$$/ns
 ---
 
 ## 8. nsenter로 Namespace 접근
+
+`nsenter`는 이미 존재하는 Namespace에 다른 프로세스가 진입할 수 있게 해주는 도구입니다. 앞서 만든 Mount Namespace에 별도의 쉘로 들어가, 그 안의 파일에 접근되는지 확인합니다.
 
 ```bash
 # Namespace에 들어가 있는 쉘의 PID 확인
@@ -263,6 +297,8 @@ sudo lsns
 
 ## 9. 새 PID Namespace 생성
 
+PID Namespace는 프로세스 ID 공간을 격리하여, Namespace 내부에서는 자체적으로 1번부터 시작하는 독립적인 PID를 가지게 합니다. 컨테이너 내부 프로세스가 호스트와 분리된 PID를 갖는 근거가 되는 기능입니다.
+
 ```bash
 # 현재 PID 확인
 echo $$
@@ -286,6 +322,8 @@ echo $$
 
 ## 10. PID Namespace 확인
 
+PID Namespace의 격리는 `/proc`이 새 Namespace 기준으로 다시 마운트되어야 온전히 드러납니다. proc 파일시스템을 마운트한 전후로 `ps` 결과가 어떻게 달라지는지 비교하여, 내부 프로세스만 보이게 되는 것을 확인합니다.
+
 ```bash
 # Namespace 내부 프로세스 확인
 ps aux | head -n 5
@@ -307,6 +345,8 @@ ps aux | head -n 5
 ---
 
 ## 11. cgroup 및 Namespace 기반 유사 컨테이너 환경 구축
+
+앞에서 따로 다룬 cgroup과 Namespace, 그리고 chroot를 한데 결합하여, 별도의 컨테이너 런타임 없이도 컨테이너와 유사한 격리 환경을 직접 만들어 봅니다. 이를 통해 컨테이너가 내부적으로 어떤 커널 기능들의 조합으로 동작하는지 이해할 수 있습니다.
 
 `cgroup과 Namespace(PID, Mount, IPC)를 함께 사용하고 root filesystem을 분리하여 컨테이너와 유사한 격리 환경을 생성`
 
@@ -481,7 +521,7 @@ exit   # Namespace 종료
 ```
 
 ```bash
-# 실습 환경 정리 (선택 - week5에 활용 예정)
+# 실습 환경 정리 (선택 - 이후 실습에서 활용할 수 있어 남겨 두어도 무방)
 sudo rm -rf /tmp/container-root
 sudo rmdir /sys/fs/cgroup/mycontainer
 ```
@@ -490,15 +530,15 @@ sudo rmdir /sys/fs/cgroup/mycontainer
 
 ### 7. 실제 컨테이너와의 차이점
 
-실습에서는 `cgroup`, `Namespace`, `chroot`를 이용하여 컨테이너와 유사한 격리 환경을 구성함,
-그러나 실제 컨테이너(Docker 등)는 추가적인 기능을 포함하여 보다 완전한 격리 및 관리 환경을 제공함
+이번 실습에서는 `cgroup`, `Namespace`, `chroot`를 이용하여 컨테이너와 유사한 격리 환경을 구성하였습니다.
+그러나 실제 컨테이너(Docker 등)는 다음과 같은 추가 기능을 포함하여 보다 완전한 격리 및 관리 환경을 제공합니다.
 
 - **Root Filesystem 구성 차이**
   - 실습 환경: 최소 실행 파일과 라이브러리만 포함한 rootfs
   - 실제 컨테이너: 이미지 기반 rootfs 사용 (`/etc`, `/usr`, `/var` 등 전체 OS 환경 포함)
 
 - **네트워크 격리**
-  - 실습 환경: 네트워크 Namespace 미구성 (week5 내용)
+  - 실습 환경: 네트워크 Namespace 미구성 (이후 모듈에서 다룸)
   - 실제 컨테이너: network Namespace 및 가상 네트워크(veth, bridge 등) 기반 독립 네트워크 환경
 
 - **보안 기능**

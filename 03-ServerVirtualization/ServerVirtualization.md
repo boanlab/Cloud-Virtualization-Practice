@@ -1,11 +1,12 @@
 # 클라우드 가상화 기술
 
-## 서버 가상화 기술 실습
+## 03. 서버 가상화 기술 실습
 
+---
 
 ## 1. KVM (Kernel-based Virtual Machine)
 
-리눅스 `커널 모듈 기반의 가상화 기능`으로 Intel VT-x 또는 AMD-V를 이용해 가상 머신(VM) 실행을 가속
+서버 가상화의 핵심 구성 요소부터 살펴봅니다. KVM은 리눅스 `커널 모듈 기반의 가상화 기능`으로, Intel VT-x 또는 AMD-V와 같은 하드웨어 가상화 기능을 이용해 가상 머신(VM) 실행을 가속합니다.
 
 - 리눅스를 호스트 OS로 이용하면서 하이퍼바이저 역할 수행
 - VM 실행 시 QEMU와 함께 사용됨
@@ -17,7 +18,7 @@
 
 ## 2. QEMU (Quick Emulator)
 
-`PC 환경을 에뮬레이션`하는 VM 실행기이자 프로세스 에뮬레이터로, KVM과 함께 사용하여 VM을 실행
+QEMU는 `PC 환경을 에뮬레이션`하는 VM 실행기이자 프로세스 에뮬레이터로, KVM과 함께 사용하여 VM을 실행합니다. KVM이 CPU 가상화를 담당한다면, QEMU는 가상 머신에 필요한 하드웨어를 흉내 내는 역할을 맡습니다.
 
 - CPU와 주변 장치(Disk, NIC 등)를 에뮬레이션
 - CPU 명령을 변환하여 실행
@@ -29,9 +30,9 @@
 
 ## 3. Libvirt
 
-`가상화 환경을 관리`하기 위한 관리 프레임워크
+Libvirt는 `가상화 환경을 관리`하기 위한 관리 프레임워크입니다. 하이퍼바이저마다 제어 방식이 다른 점을 추상화해, 동일한 방식으로 VM을 다룰 수 있도록 해 줍니다.
 
-QEMU-KVM, Xen, VMware 등 다양한 하이퍼바이저를 관리하고 제어하기 위한 **통합 API** 제공
+QEMU-KVM, Xen, VMware 등 다양한 하이퍼바이저를 관리하고 제어하기 위한 **통합 API**를 제공하며, 이후 실습에서 사용하는 `virsh` 명령어도 Libvirt를 통해 동작합니다.
 
 ![figure3](./images/figure3.png)
 
@@ -39,7 +40,11 @@ QEMU-KVM, Xen, VMware 등 다양한 하이퍼바이저를 관리하고 제어하
 
 ## 4. QEMU-KVM 설치
 
+앞서 살펴본 구성 요소를 실제로 설치합니다. 먼저 호스트의 CPU가 하드웨어 가상화를 지원하는지 확인한 뒤, QEMU와 KVM을 설치합니다.
+
 ### CPU 가상화 지원 확인
+
+KVM 가속을 사용하려면 CPU가 하드웨어 가상화를 지원해야 하므로, 설치 전에 지원 여부를 먼저 확인합니다.
 
 ```bash
 # CPU 가상화 지원 여부 확인 명령어
@@ -61,6 +66,8 @@ egrep -c '(vmx|svm)' /proc/cpuinfo
 
 ### QEMU (+ KVM) 설치
 
+QEMU, KVM, 그리고 Libvirt 관련 패키지를 한 번에 설치해 가상화 환경을 구성합니다.
+
 ```bash
 sudo apt-get update
 
@@ -76,6 +83,7 @@ sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-ut
 
 ### 권한 설정
 
+기본 설정에서는 가상화 관련 명령을 실행할 때 루트 권한이 필요합니다. 일반 사용자 계정을 `libvirt`와 `kvm` 그룹에 추가하면 sudo 없이도 VM을 관리할 수 있습니다.
 
 ```bash
 # 루트 권한 없이 KVM 명령어를 실행할 수 있도록 설정
@@ -90,12 +98,14 @@ sudo usermod -aG kvm $USER
 
 ## 5. VM 네트워크 확인
 
+Libvirt를 설치하면 VM이 외부와 통신할 수 있도록 가상 네트워크가 자동으로 구성됩니다. VM을 만들기 전에 어떤 네트워크 인터페이스가 준비되어 있는지 확인합니다.
+
 ```bash
 # VM을 위해 생성된 네트워크 인터페이스 확인
 ip a
 ```
 
-`virbr0` 인터페이스 확인
+출력에서 `virbr0` 인터페이스를 확인합니다. 이는 Libvirt의 기본 가상 네트워크(default)를 위한 브리지 인터페이스입니다.
 
 ![figure6](./images/figure6.png)
 
@@ -103,6 +113,7 @@ ip a
 
 ### 가상 네트워크 정보 확인
 
+`virsh` 명령어로 가상 네트워크의 목록과 상세 설정을 확인할 수 있습니다.
 
 ```bash
 # 모든 가상 네트워크 확인
@@ -127,7 +138,11 @@ virsh net-dumpxml default
 
 ## 6. ISO 기반 VM 생성
 
+가장 일반적인 방식으로, 설치용 ISO 이미지를 이용해 OS를 직접 설치하면서 VM을 생성합니다.
+
 ### Ubuntu ISO 다운로드
+
+설치에 사용할 Ubuntu 서버 ISO 이미지를 내려받아, Libvirt가 디스크 이미지를 관리하는 디렉터리로 옮깁니다.
 
 ```bash
 wget https://releases.ubuntu.com/24.04/ubuntu-24.04.3-live-server-amd64.iso
@@ -138,6 +153,8 @@ sudo mv ubuntu-24.04.3-live-server-amd64.iso /var/lib/libvirt/images/
 ---
 
 ### VM 생성
+
+`virt-install` 명령어로 VM의 사양(vCPU, 메모리, 디스크)과 부팅에 사용할 ISO, 네트워크, 그래픽 방식을 지정해 새 VM을 생성합니다.
 
 ```bash
 virt-install --name ubuntu-vm \
@@ -153,7 +170,11 @@ virt-install --name ubuntu-vm \
 
 ## 7. VM 접속
 
+생성한 VM의 화면에 접속해 OS 설치를 진행합니다. `--graphics vnc`로 생성한 VM은 VNC 뷰어로 화면에 접근할 수 있습니다.
+
 ### RealVNC Viewer 다운로드
+
+VNC 접속에 사용할 뷰어를 아래 주소에서 내려받아 설치합니다.
 
 https://www.realvnc.com/en/connect/download/viewer/
 
@@ -169,7 +190,7 @@ RealVNC Viewer를 이용하여 VM 화면 접속
 
 ### 여러 VM 생성 시 VNC 포트
 
-VNC 포트는 다음 방식으로 자동 할당
+VM을 여러 개 생성하면 각 VM에 서로 다른 VNC 포트가 할당되므로, 접속하려는 VM의 포트를 구분해 두어야 합니다. 포트는 다음 방식으로 자동 할당됩니다.
 
 ```
 5900 + display 번호
@@ -190,7 +211,8 @@ VM 종료 시 포트는 재사용됨
 
 ---
 ### SSH를 이용한 VM 접속
-ISO 기반 VM은 SSH 서버가 기본적으로 설치되어 있지 않음
+
+화면 접속 외에 SSH로도 VM에 접속할 수 있습니다. 다만 ISO 기반으로 설치한 VM은 SSH 서버가 기본적으로 설치되어 있지 않으므로, VM 내부에서 직접 설치하고 서비스를 활성화해야 합니다.
 
 ```bash
 sudo apt-get update
@@ -207,6 +229,8 @@ sudo systemctl enable ssh
 ---
 
 ## 8. VM 관리 명령어 (virsh)
+
+`virsh`는 Libvirt가 제공하는 명령행 관리 도구로, VM의 조회, 시작과 종료, 일시정지, 삭제 등 생애주기 전반을 제어할 수 있습니다.
 
 ### VM 목록 확인
 
@@ -234,6 +258,8 @@ virsh reboot <vm_name>
 
 ### 강제 종료
 
+정상 종료(`shutdown`)가 응답하지 않을 때, 전원을 강제로 차단하듯 VM을 즉시 중단합니다.
+
 ```bash
 # 전원 차단과 같음
 virsh destroy <vm_name>
@@ -254,6 +280,8 @@ virsh resume <vm_name>
 
 ### VM 삭제
 
+VM 정의를 제거합니다. 기본적으로 디스크 이미지는 남겨 두며, 디스크까지 함께 지우려면 별도 옵션을 사용합니다.
+
 ```bash
 # VM 삭제 (디스크는 유지)
 virsh undefine <vm_name>
@@ -268,7 +296,11 @@ virsh undefine <vm_name> --remove-all-storage
 
 ## 9. OS 설치 없이 VM 생성 (Cloud Image)
 
+ISO로 OS를 직접 설치하는 방식과 달리, 클라우드 환경에서는 OS가 미리 설치된 Cloud Image를 사용해 설치 과정 없이 빠르게 VM을 만듭니다. 클라우드에서 인스턴스가 즉시 부팅되는 것과 같은 방식입니다.
+
 ### 패키지 설치
+
+Cloud Image와 cloud-init 설정을 다루는 데 필요한 유틸리티를 설치합니다.
 
 ```bash
 sudo apt-get install -y cloud-image-utils
@@ -277,6 +309,8 @@ sudo apt-get install -y cloud-image-utils
 ---
 
 ### Ubuntu Cloud Image 다운로드
+
+OS가 미리 설치된 Ubuntu Cloud Image를 내려받아 디스크 이미지 디렉터리로 옮깁니다.
 
 ```bash
 wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
@@ -296,7 +330,11 @@ sudo mv noble-server-cloudimg-amd64.img /var/lib/libvirt/images
 
 ## 10. cloud-init 설정
 
+Cloud Image는 처음 부팅될 때 `cloud-init`을 통해 초기 설정을 적용합니다. 호스트 이름, 사용자 계정, 비밀번호, 네트워크 등을 미리 정의해 두면 부팅과 동시에 자동으로 구성됩니다.
+
 ### user-data
+
+생성할 계정과 비밀번호, sudo 권한, 로그인 방식 등 VM의 초기 사용자 환경을 정의합니다.
 
 ```yaml
 #cloud-config
@@ -322,6 +360,8 @@ chpasswd:
 
 ### meta-data
 
+인스턴스 식별 정보를 담는 파일로, 여기서는 VM의 로컬 호스트 이름을 지정합니다.
+
 ```yaml
 local-hostname: myvm
 ```
@@ -329,6 +369,8 @@ local-hostname: myvm
 ---
 
 ### network-config (ubuntu 기준 netplan) 
+
+VM의 네트워크 구성을 정의합니다. 아래 예시는 DHCP 대신 고정 IP, 게이트웨이, DNS를 직접 지정하는 설정입니다.
 
 ```yaml
 version: 2
@@ -349,6 +391,8 @@ ethernets:
 
 ## 11. cloud-init 이미지 생성
 
+앞서 작성한 설정 파일들을 cloud-init이 읽을 수 있는 하나의 ISO 이미지(seed)로 묶습니다. 이 이미지를 VM에 연결하면 첫 부팅 시 설정이 적용됩니다.
+
 ```bash
 # cloud-localds 명령어로 cloud-init ISO 이미지 생성
 sudo cloud-localds -v --network-config=network-config myvm-seed.iso user-data meta-data
@@ -360,6 +404,8 @@ sudo mv myvm-seed.iso /var/lib/libvirt/images
 ---
 
 ## 12. QCOW2 디스크 생성
+
+원본 Cloud Image를 직접 사용하지 않고, 그 위에 변경분만 기록하는 overlay 디스크를 만듭니다. 이렇게 하면 원본 이미지는 그대로 보존되어 여러 VM의 기반으로 재사용할 수 있습니다.
 
 ```bash
 # 디스크 이미지 저장 디렉터리 이동
@@ -374,6 +420,8 @@ sudo qemu-img create -F qcow2 -b ./noble-server-cloudimg-amd64.img -f qcow2 ./my
 
 ## 13. Cloud Image 기반 VM 생성
 
+준비한 overlay 디스크와 cloud-init seed 이미지를 연결해 VM을 생성합니다. ISO 설치 방식과 달리 `--import` 옵션으로 기존 디스크를 그대로 가져와 부팅하므로 별도의 OS 설치 과정이 없습니다.
+
 ```bash
 # cloud-init ISO 이미지 연결하여 VM 생성
 virt-install --name myvm \
@@ -386,7 +434,8 @@ virt-install --name myvm \
 --os-variant ubuntu24.04
 ```
 ### SSH를 이용한 VM 접속
-Cloud Image 기반 VM은 기본적으로 SSH 서버가 설치되어 있어 SSH를 이용한 접속이 가능
+
+Cloud Image 기반 VM은 SSH 서버가 기본적으로 설치되어 있어, 별도 설치 없이 곧바로 SSH로 접속할 수 있습니다.
 ```bash
 # VM IP 주소는 network-config에서 설정한 IP로 접속
 ssh ubuntu@<VM_IP_ADDRESS>
@@ -398,7 +447,11 @@ ssh ubuntu@192.168.122.20
 
 ## 14. Snapshot 기능
 
+Snapshot은 특정 시점의 VM 상태를 저장해 두었다가 필요할 때 그 시점으로 되돌릴 수 있는 기능입니다. 설정 변경이나 테스트 전에 안전한 복원 지점을 만들어 둘 때 유용합니다.
+
 ### Snapshot 생성
+
+디스크 상태만 저장하는 방식과 메모리(RAM) 상태까지 함께 저장하는 방식이 있습니다. 메모리를 포함하면 복원 시 실행 중이던 상태까지 그대로 되살릴 수 있습니다.
 
 ```bash
 # 1. VM 디스크 상태를 external snapshot 방식으로 저장
@@ -447,6 +500,8 @@ disk-only snapshot의 경우 디스크 상태만 복원되고 VM은 재시작 �
 ---
 
 ### Snapshot 삭제
+
+더 이상 필요하지 않은 Snapshot을 제거합니다. 데이터까지 함께 지울 수도 있고, 메타데이터만 정리할 수도 있습니다.
 
 ```bash
 # 스냅샷 메타데이터와 데이터를 함께 삭제

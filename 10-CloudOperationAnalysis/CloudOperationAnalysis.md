@@ -1,10 +1,14 @@
 # 클라우드 가상화 기술
 
-## 클라우드 운영 및 분석 기술 실습
+## 10. 클라우드 운영·분석 기술 실습
 
-본 실습에서는 클라우드 네이티브 환경의 **관측 가능성(Observability)** 을 직접 구축하는 과정을 다룸
+> 본 실습은 Ubuntu 24.04 단일 호스트에 모든 컴포넌트를 네이티브로 배포하는 환경을 기준으로 합니다.
 
-이론에서 학습한 **Metrics, Logs, Traces** 의 세 가지 축을 실제 도구로 구현하고, 수집 → 저장 → 시각화 → 알림 → 분산 추적까지의 전체 파이프라인을 단일 호스트(Ubuntu 24.04) 위에 네이티브로 배포함
+---
+
+본 실습에서는 클라우드 네이티브 환경의 **관측 가능성(Observability)** 을 직접 구축하는 과정을 다룹니다. 관측 가능성이란 시스템 외부로 드러나는 신호만으로 내부 상태를 추론할 수 있는 정도를 뜻하며, 메트릭·로그·트레이스 세 가지 데이터를 핵심 축으로 삼습니다.
+
+앞 모듈에서 다룬 **Metrics(메트릭, 수치형 시계열), Logs(로그, 이벤트 기록), Traces(트레이스, 요청 경로 추적)** 의 세 가지 축을 실제 도구로 구현하고, 수집 → 저장 → 시각화 → 알림 → 분산 추적까지의 전체 파이프라인을 단일 호스트(Ubuntu 24.04) 위에 네이티브로 배포합니다.
 
 | 구분 | 사용 도구 | 포트 |
 | --- | --- | --- |
@@ -56,7 +60,7 @@ cd ~/observability
 
 ## 2. Prometheus 설치
 
-`Prometheus`는 Pull 방식으로 메트릭을 수집하는 시계열 데이터베이스 및 모니터링 시스템
+먼저 관측 파이프라인의 중심이 될 메트릭 수집 서버를 설치합니다. `Prometheus`는 대상의 `/metrics` 엔드포인트를 주기적으로 가져오는(Pull) 방식으로 메트릭을 수집하는 오픈소스 시계열 데이터베이스 겸 모니터링 시스템입니다.
 
 ### Prometheus 전용 사용자 생성
 
@@ -177,14 +181,14 @@ sudo systemctl status prometheus
 - `--web.enable-lifecycle` 옵션은 `curl -X POST http://localhost:9090/-/reload` 로 무중단 설정 재로드를 가능하게 함
 - TSDB 저장 경로(`/var/lib/prometheus`)는 시계열 데이터가 누적되는 위치이며 디스크 용량 관리 대상
 - 기본 보존 기간은 15일이며 `--storage.tsdb.retention.time=30d` 옵션으로 변경 가능
-- 본 실습은 **3.5 LTS(Long-Term Support)** 계열을 사용함 — LTS 는 약 1년간 보안·버그픽스를 받아 수업·운영 환경에 적합함 (일반 마이너 릴리즈는 6주 주기로 패치가 종료됨)
+- 본 실습은 **3.5 LTS(Long-Term Support)** 계열을 사용함 — LTS 는 약 1년간 보안·버그픽스를 받아 실습·운영 환경에 적합함 (일반 마이너 릴리즈는 6주 주기로 패치가 종료됨)
 - Prometheus 3.x 는 새로운 웹 UI 와 UTF-8 메트릭 이름을 기본 지원하며, scrape 대상의 `Content-Type` 헤더 검증이 v2 보다 엄격해짐 (표준 Exporter 는 올바른 헤더를 보내므로 본 실습에는 영향 없음)
 
 ---
 
 ## 4. Node Exporter 설치
 
-`Node Exporter`는 호스트의 CPU, Memory, Disk, Network 등 OS 및 하드웨어 메트릭을 수집하여 Prometheus 가 읽을 수 있는 포맷으로 노출하는 Exporter
+Prometheus 자체는 다른 프로그램이 노출한 메트릭을 가져올 뿐, 호스트의 자원 사용량을 직접 알지 못합니다. 이를 보완하기 위해 Exporter 를 설치합니다. `Node Exporter`는 호스트의 CPU, Memory, Disk, Network 등 OS 및 하드웨어 메트릭을 수집하여 Prometheus 가 읽을 수 있는 포맷으로 노출하는 대표적인 Exporter 입니다.
 
 ### 전용 사용자 및 바이너리 설치
 
@@ -249,7 +253,7 @@ curl -s http://localhost:9100/metrics | grep '^node_' | head -30
 
 ### 참고
 
-- 출력되는 `# HELP`, `# TYPE` 주석은 Prometheus 표준 노출 포맷의 메타데이터임 (이론 슬라이드 39 참고)
+- 출력되는 `# HELP`, `# TYPE` 주석은 Prometheus 표준 노출 포맷의 메타데이터임
 - `node_cpu_seconds_total` 과 같이 `_total` 접미사가 붙은 메트릭은 Counter 타입임
 - `node_memory_MemAvailable_bytes` 와 같이 현재 상태를 나타내는 메트릭은 Gauge 타입임
 
@@ -309,9 +313,9 @@ curl -X POST http://localhost:9090/-/reload
 
 ## 6. PromQL 기초 실습
 
-`PromQL(Prometheus Query Language)` 은 시계열 데이터를 선택하고 집계하기 위한 함수형 쿼리 언어
+수집된 메트릭을 실제로 조회하고 가공하는 방법을 익힙니다. `PromQL(Prometheus Query Language)` 은 시계열 데이터를 선택하고 집계하기 위한 함수형 쿼리 언어로, 이후 대시보드와 알림 규칙의 기반이 됩니다.
 
-Prometheus UI 의 `Graph` 탭에서 다음 쿼리들을 차례로 실행해보고 결과 확인(별도로 스크린샷은 제공하지 않음)
+Prometheus UI 의 `Graph` 탭에서 다음 쿼리들을 차례로 실행해보고 결과를 확인합니다(별도로 스크린샷은 제공하지 않습니다).
 
 ![figure9](./images/figure9.png)
 
@@ -378,7 +382,7 @@ stress-ng --cpu 4 --timeout 60s
 
 ## 7. Grafana 설치
 
-`Grafana` 는 시계열 데이터 및 로그를 시각화하는 오픈소스 대시보드 도구
+PromQL 로 직접 조회하는 대신, 메트릭을 그래프와 패널로 한눈에 보기 위한 시각화 도구를 설치합니다. `Grafana` 는 Prometheus 를 비롯한 다양한 데이터 소스의 시계열 데이터 및 로그를 대시보드로 시각화하는 오픈소스 도구입니다.
 
 ### 공식 APT 저장소 등록
 
@@ -425,6 +429,8 @@ sudo systemctl status grafana-server
 ---
 
 ## 8. Grafana 데이터소스 및 대시보드 구성
+
+Grafana 가 메트릭을 가져올 위치를 알도록 Prometheus 를 데이터소스로 등록한 뒤, 자주 보는 시스템 지표를 패널로 배치한 대시보드를 구성합니다. 데이터소스는 Grafana 가 질의를 보낼 백엔드를 가리키며, 패널은 하나의 쿼리 결과를 특정 시각화 형태로 표현하는 최소 단위입니다.
 
 ### Prometheus 데이터소스 연결
 
@@ -510,14 +516,14 @@ rate(node_network_transmit_bytes_total{device!="lo"}[5m])
 ### 참고
 
 - 각 패널 우상단 메뉴에서 `Inspect > JSON` 을 통해 패널 정의를 JSON 으로 확인 가능
-- 대시보드 전체는 `Share > Export` 에서 JSON 으로 export 하여 버전 관리 가능 (이론 슬라이드 37 참고)
+- 대시보드 전체는 `Share > Export` 에서 JSON 으로 export 하여 버전 관리 가능
 - 동일한 JSON 을 다른 Grafana 인스턴스에 import 하면 동일 대시보드 재현 가능
 
 ---
 
 ## 9. Grafana 변수 (Templating)
 
-대시보드에 변수를 추가하여 동적으로 필터링되는 대시보드 구성
+대시보드 상단에 드롭다운 형태의 변수를 추가하여, 같은 패널을 대상별로 동적으로 필터링할 수 있도록 구성합니다. 변수(템플릿 변수)는 쿼리에 `$변수명` 형태로 끼워 넣어 여러 인스턴스나 작업(job)을 하나의 대시보드로 재사용하게 해 줍니다.
 
 ### 변수 추가
 
@@ -612,7 +618,7 @@ rate(node_network_transmit_bytes_total{job="$job",instance="$instance",device!="
 
 ## 10. Alertmanager 설치
 
-`Alertmanager` 는 Prometheus 가 발생시킨 알림을 받아 중복 제거, 그룹화, 라우팅, 채널 전송을 담당하는 별도 컴포넌트
+수집한 메트릭이 특정 조건을 넘었을 때 이를 사람에게 알리는 경로를 마련합니다. `Alertmanager` 는 Prometheus 가 발생시킨 알림을 받아 중복 제거, 그룹화, 라우팅, 채널 전송을 담당하는 별도 컴포넌트로, Prometheus 가 "무엇이 문제인지" 판단한 결과를 "누구에게 어떻게 전달할지" 처리하는 역할을 맡습니다.
 
 ### 전용 사용자 및 디렉토리 생성
 
@@ -721,6 +727,8 @@ sudo systemctl status alertmanager
 
 ## 11. Alert Rule 작성 및 Prometheus 연동
 
+Alertmanager 를 설치했으니, 이제 Prometheus 에 어떤 조건에서 알림을 발생시킬지 규칙(Alert Rule)을 정의하고 두 컴포넌트를 연결합니다. 규칙은 PromQL 표현식이 일정 시간 이상 참일 때 알림을 발화시키는 방식으로 동작합니다.
+
 ### Prometheus 가 Alertmanager 를 인식하도록 설정 추가
 
 ```bash
@@ -756,7 +764,7 @@ EOF
 # 규칙 디렉토리 생성
 sudo mkdir -p /etc/prometheus/rules
 
-# CPU 및 메모리 관련 알림 규칙 (수업 시연용 - 임계값/지속시간을 낮춰 빠른 발동 유도)
+# CPU 및 메모리 관련 알림 규칙 (데모용 - 임계값/지속시간을 낮춰 빠른 발동 유도)
 sudo tee /etc/prometheus/rules/node-alerts.yml > /dev/null <<EOF
 groups:
   - name: node-alerts
@@ -840,7 +848,7 @@ stress-ng --cpu $(($(nproc) * 2)) --timeout 300s
 
 ## 12. Custom Exporter 개발
 
-표준 Exporter 가 제공하지 않는 애플리케이션 비즈니스 메트릭을 노출하기 위해 Python 으로 Custom Exporter 직접 작성
+Node Exporter 같은 표준 Exporter 는 시스템 자원만 노출하므로, 요청 수나 에러율처럼 애플리케이션 고유의 비즈니스 메트릭은 직접 노출해야 합니다. 이를 위해 Prometheus 노출 포맷을 따르는 Custom Exporter 를 Python 으로 직접 작성하고, Counter·Gauge·Histogram 세 가지 메트릭 타입을 실제로 다뤄 봅니다.
 
 ### Python 가상환경 및 라이브러리 설치
 
@@ -994,7 +1002,7 @@ deactivate
 
 ## 13. Elasticsearch 설치
 
-`Elasticsearch` 는 JSON 기반의 분산형 RESTful 검색 엔진으로, ELK 스택의 저장소 역할 담당
+여기서부터는 관측 가능성의 두 번째 축인 로그를 다루기 위해 ELK 스택을 구축합니다. ELK 는 로그를 저장·검색하는 Elasticsearch, 수집·변환하는 Logstash, 시각화하는 Kibana 의 머리글자를 딴 로그 분석 스택입니다. 그 첫 단계로, `Elasticsearch` 는 JSON 기반의 분산형 RESTful 검색 엔진으로, ELK 스택에서 저장소 역할을 담당합니다.
 
 ### Elastic 공식 APT 저장소 등록
 
@@ -1084,7 +1092,7 @@ curl "http://localhost:9200/_cluster/health?pretty"
 
 ## 14. Kibana 설치 및 설정
 
-`Kibana` 는 Elasticsearch 데이터를 검색, 시각화, 관리하는 웹 UI
+Elasticsearch 에 저장된 로그를 사람이 보기 쉽게 다루기 위한 웹 UI 를 설치합니다. `Kibana` 는 Elasticsearch 데이터를 검색, 시각화, 관리하는 웹 인터페이스로, ELK 스택에서 로그 분석의 진입점 역할을 합니다.
 
 ### 설치
 
@@ -1127,7 +1135,7 @@ sudo systemctl status kibana
 
 ## 15. Logstash 설치 및 파이프라인 구성
 
-`Logstash` 는 다양한 소스로부터 데이터를 수집하여 변환 후 저장소로 전송하는 ETL 도구
+수집한 원시 로그를 그대로 저장하기보다, 구조화된 필드로 파싱해 두면 이후 검색과 분석이 훨씬 수월해집니다. `Logstash` 는 다양한 소스로부터 데이터를 수집해 변환한 뒤 저장소로 전송하는 ETL 도구로, `입력(input) → 필터(filter) → 출력(output)` 의 파이프라인 구조로 동작합니다.
 
 ### 설치
 
@@ -1214,7 +1222,7 @@ sudo ss -tlnp | grep 5044
 
 ## 16. Filebeat 설치 및 로그 수집
 
-`Filebeat` 는 서버에 설치되어 로그 파일을 읽고 중앙으로 전송하는 경량 Shipper
+로그 파일을 읽어 Logstash 로 흘려보내는 수집 지점을 구성하여 로그 파이프라인을 완성합니다. `Filebeat` 는 서버에 설치되어 로그 파일을 읽고 중앙으로 전송하는 경량 Shipper 로, 자원 소비가 적어 로그를 발생시키는 호스트마다 함께 배포하기에 적합합니다.
 
 ### 설치
 
@@ -1322,6 +1330,8 @@ curl "http://localhost:9200/lab-nginx-*/_count?pretty"
 
 ## 17. Kibana 에서 로그 검색 및 시각화
 
+이제 Elasticsearch 에 적재된 로그를 Kibana 에서 직접 검색하고 그래프로 시각화합니다. 먼저 어떤 인덱스를 조회할지 정의하는 Data View 를 만든 뒤, Discover 로 개별 로그를 탐색하고 Lens 로 집계 차트를 구성하는 순서로 진행합니다.
+
 ### Data View 생성
 
 1. Kibana 좌측 메뉴 `Management > Stack Management` 진입
@@ -1418,9 +1428,9 @@ http.response.status_code : 500 or http.response.status_code : 401
 
 ## 18. OpenTelemetry Collector 설치
 
-`OpenTelemetry(OTel)` 는 메트릭, 로그, 트레이스를 벤더 중립적으로 수집/전송하는 단일 프레임워크
+관측 가능성의 세 번째 축인 트레이스를 다루기 위해, 텔레메트리 수집을 표준화하는 OpenTelemetry 를 도입합니다. `OpenTelemetry(OTel)` 는 메트릭, 로그, 트레이스를 벤더 중립적으로 수집·전송하기 위한 단일 프레임워크입니다.
 
-`OTel Collector` 는 다양한 소스에서 텔레메트리 데이터를 받아 처리한 후 여러 백엔드로 분배하는 중앙 에이전트
+`OTel Collector` 는 다양한 소스에서 텔레메트리 데이터를 받아 가공한 뒤 여러 백엔드로 분배하는 중앙 에이전트로, 애플리케이션과 저장소 사이에서 데이터 형식 변환과 라우팅을 담당합니다.
 
 ### 설치
 
@@ -1442,7 +1452,7 @@ sudo systemctl status otelcol-contrib
 
 ### Collector 설정 작성
 
-`Receivers → Processors → Exporters` 의 파이프라인 구조 (이론 슬라이드 41 참고)
+OTel Collector 는 `Receivers → Processors → Exporters` 의 파이프라인 구조로 동작합니다. 즉, 데이터를 받아들이는 수신기(Receivers), 가공·필터링하는 처리기(Processors), 백엔드로 내보내는 송신기(Exporters)가 차례로 연결됩니다.
 
 본 실습에서는 별도의 트레이스 시각화 백엔드(Jaeger 등) 없이, **수신한 트레이스를 메트릭으로 변환(spanmetrics connector)** 하여 Prometheus 로 노출함
 
@@ -1580,7 +1590,7 @@ curl -X POST http://localhost:9090/-/reload
 
 ## 19. 분산 추적 데모 애플리케이션
 
-OTel SDK 를 사용한 두 개의 마이크로서비스를 만들어, 서비스 간 호출이 트레이스로 수집되고 spanmetrics 를 통해 메트릭으로 변환되는 과정 확인
+OTel 자동 계측을 적용한 두 개의 마이크로서비스(Frontend, Backend)를 만들어, 서비스 간 호출이 하나의 트레이스로 묶여 수집되고 spanmetrics 를 통해 메트릭으로 변환되는 과정을 확인합니다. 트레이스(Trace)는 하나의 요청이 여러 서비스를 거치며 남기는 경로 전체를 의미하며, 그 안의 각 구간을 span 이라고 부릅니다.
 
 ### Python 환경 준비
 

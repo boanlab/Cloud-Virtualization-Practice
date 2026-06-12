@@ -1,8 +1,12 @@
 # 클라우드 가상화 기술
 
-## 스토리지 가상화 기술 실습
+## 07. 스토리지 가상화 기술 실습
+
+---
 
 ## 1. NFS 설치 및 운영
+
+NFS(Network File System)는 네트워크를 통해 원격 서버의 디렉토리를 로컬처럼 마운트하여 여러 호스트가 파일을 공유할 수 있게 해주는 파일 수준 공유 방식입니다. 본 실습에서는 서버와 클라이언트 역할을 나누어 NFS의 동작을 직접 확인합니다.
 
 - 가상 머신 2개를 준비  
 - 하나는 `NFS 서버`, 다른 하나는 `NFS 클라이언트`로 이용  
@@ -12,6 +16,8 @@
 ---
 
 ## 2. NFS 서버 설정
+
+먼저 공유를 제공할 NFS 서버를 구성합니다. NFS 서버 패키지를 설치하고, 클라이언트와 공유할 디렉토리를 만든 뒤 적절한 소유자와 권한을 부여합니다.
 
 ```bash
 # NFS 서버로 이용할 호스트에서 수행
@@ -67,6 +73,8 @@ ls -ld /srv/nfs_share
 
 ## 3. NFS 공유 설정
 
+어떤 디렉토리를 어떤 클라이언트에게 어떤 권한으로 공개할지는 `/etc/exports` 파일에 정의합니다. 아래 명령으로 공유 디렉토리와 접근 옵션을 등록합니다.
+
 ```bash
 # /etc/exports 파일에 공유 디렉토리 설정 추가
 echo "/srv/nfs_share *(rw,sync,no_subtree_check)" | sudo tee -a /etc/exports
@@ -96,6 +104,8 @@ echo "/srv/nfs_share *(rw,sync,no_subtree_check)" | sudo tee -a /etc/exports
 
 ## 4. NFS 서버 적용
 
+`/etc/exports`에 추가한 설정을 실제로 반영하기 위해 NFS 서비스를 재시작하고, 현재 내보내기(export)된 공유 목록을 확인합니다.
+
 ```bash
 # NFS 서버 재시작
 sudo systemctl restart nfs-kernel-server
@@ -109,6 +119,8 @@ sudo exportfs -v
 ---
 
 ## 5. NFS 클라이언트 설정
+
+이제 다른 가상 머신에서 클라이언트를 구성합니다. 클라이언트 패키지를 설치한 뒤, 서버가 공유한 디렉토리를 로컬 디렉토리에 마운트하여 마치 자신의 디렉토리처럼 사용할 수 있게 합니다.
 
 ```bash
 # NFS 클라이언트로 이용할 호스트에서 수행
@@ -139,6 +151,8 @@ ls -ld /mnt/nfs_share
 
 ## 6. NFS 동작 확인
 
+마운트가 정상적으로 동작하는지 확인하기 위해, 클라이언트에서 공유 디렉토리에 파일을 생성해 봅니다. 생성한 파일은 네트워크를 거쳐 서버 측 디렉토리에 실제로 저장됩니다.
+
 ```bash
 # 마운트된 디렉토리에 파일 생성 테스트
 echo "Storage Virtualization" > /mnt/nfs_share/test.txt
@@ -150,6 +164,8 @@ echo "Storage Virtualization" > /mnt/nfs_share/test.txt
 ---
 
 ## 7. NFS 마운트 해제
+
+공유 사용을 마치면 클라이언트에서 마운트를 해제합니다. 마운트를 해제하면 서버에 저장된 파일에는 더 이상 접근할 수 없게 됩니다.
 
 ```bash
 # NFS 마운트 해제
@@ -180,6 +196,8 @@ ls -l /mnt/nfs_share
 ---
 
 ## 8. NFS 자동 마운트 설정 (/etc/fstab)
+
+기본적으로 NFS 마운트는 재부팅 시 유지되지 않습니다. 부팅할 때마다 자동으로 마운트되도록 하려면, 마운트 정보를 시스템의 파일시스템 테이블인 `/etc/fstab`에 등록해야 합니다.
 
 재부팅 후에도 NFS가 자동으로 마운트되도록 `/etc/fstab`에 설정을 추가할 수 있음
 
@@ -213,6 +231,8 @@ mount | grep nfs
 
 ## 9. iSCSI 설치 및 운영
 
+iSCSI(Internet Small Computer Systems Interface)는 SCSI 명령을 TCP/IP 네트워크 위로 전송하여, 원격 저장장치를 마치 로컬에 직접 연결된 디스크처럼 사용할 수 있게 하는 블록 수준 스토리지 프로토콜입니다. 파일 단위로 공유하는 NFS와 달리, 클라이언트는 연결된 블록 장치를 직접 포맷하여 사용합니다. 여기서 저장소를 제공하는 쪽을 `Target`, 이를 연결해 사용하는 쪽을 `Initiator`라고 부릅니다.
+
 - 가상 머신 2개를 준비  
 - 하나는 `iSCSI 서버`, 다른 하나는 `iSCSI Initiator`로 이용
 
@@ -221,6 +241,8 @@ mount | grep nfs
 ---
 
 ## 10. iSCSI 서버 설정
+
+저장소를 제공하는 Target 서버를 구성합니다. iSCSI 타겟 서버 패키지(`tgt`)를 설치하고, Initiator에게 제공할 디스크 역할을 할 이미지 파일을 생성합니다.
 
 ```bash
 # iSCSI 서버로 이용할 호스트에서 수행
@@ -246,9 +268,11 @@ sudo dd if=/dev/zero of=/srv/iscsi_disks/disk01.img bs=1G count=1
 
 ## 11. iSCSI 타겟 설정
 
+앞서 만든 디스크 이미지를 실제 iSCSI 타겟으로 노출하기 위해, 타겟 설정 파일을 작성합니다. 각 타겟은 IQN이라는 전역 고유 식별자로 구분하며, 어떤 Initiator의 접근을 허용할지 IP로 지정합니다.
+
 ```bash
 # iSCSI 타겟 설정 파일 작성
-# [Target IQN]은 iqn.2026-05.kr.ac.dankook:[학번]과 같이 고유하게 설정할 것
+# [Target IQN]은 iqn.2026-05.kr.ac.dankook:[고유식별자]와 같이 고유하게 설정할 것
 # [Initiator IP]는 후에 iSCSI Initiator를 설치할 호스트의 IP 주소로 설정할 것
 sudo tee /etc/tgt/conf.d/iscsi-target.conf <<EOF
 <target [Target IQN]>
@@ -345,6 +369,8 @@ sudo iscsiadm -m session
 
 ## 13. iSCSI Initiator 설정
 
+이번에는 저장소를 사용하는 Initiator 호스트를 구성합니다. Initiator 패키지(`open-iscsi`)를 설치하고, 네트워크에서 사용 가능한 타겟을 검색(discovery)한 뒤 해당 타겟에 로그인하여 디스크를 연결합니다.
+
 ```bash
 # iSCSI Initiator로 이용할 호스트에서 수행
 
@@ -375,6 +401,8 @@ sudo tgtadm --mode target --op show
 ---
 
 ## 14. 연결된 디스크 확인
+
+타겟에 로그인하면, Initiator 입장에서는 새로운 블록 디바이스가 추가됩니다. `lsblk` 명령으로 연결된 디스크가 로컬 장치처럼 인식되는지 확인합니다.
 
 ```bash
 # 연결된 블록 디바이스 확인
@@ -418,6 +446,8 @@ lsblk
 
 ## 15. 디스크 포맷 및 마운트
 
+iSCSI로 연결된 디스크는 비어 있는 블록 장치이므로, 사용하기 전에 파일시스템을 직접 생성(포맷)해야 합니다. 여기서는 ext4로 포맷한 뒤 디렉토리에 마운트하여 사용할 수 있도록 준비합니다.
+
 ```bash
 # 연결된 디스크를 ext4 파일시스템으로 포맷
 sudo mkfs.ext4 /dev/<디스크이름>
@@ -439,6 +469,8 @@ lsblk | grep <디스크이름>
 ---
 
 ## 16. 디스크 사용 테스트
+
+마운트한 디스크가 정상적으로 동작하는지 확인합니다. 권한을 설정한 뒤 파일을 생성하고, 사용량을 조회하여 실제 저장이 이루어지는지 점검합니다.
 
 ```bash
 # 마운트 포인트의 소유자를 현재 사용자(ubuntu)로 변경
@@ -462,6 +494,8 @@ df -h /mnt/iscsi_disk
 ---
 
 ## 17. iSCSI 연결 해제
+
+사용을 마치면 디스크를 안전하게 분리합니다. 먼저 마운트를 해제한 뒤 타겟 세션에서 로그아웃하면, Initiator에서 해당 블록 디바이스가 사라집니다.
 
 ```bash
 # Initiator 호스트에서 수행
@@ -497,6 +531,8 @@ sudo tgtadm --mode target --op show
 ---
 
 ## NFS vs iSCSI 비교
+
+앞서 다룬 두 방식은 모두 네트워크를 통해 스토리지를 제공하지만, 공유 수준과 용도가 다릅니다. NFS는 파일 수준에서 여러 호스트가 손쉽게 공유하기에 적합하고, iSCSI는 블록 수준으로 단일 호스트가 디스크처럼 사용하기에 적합합니다. 아래 표에서 주요 차이를 정리합니다.
 
 | 항목 | NFS | iSCSI |
 |------|-----|-------|
